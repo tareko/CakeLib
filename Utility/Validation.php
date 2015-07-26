@@ -49,6 +49,19 @@ class Validation {
 	public static $errors = array();
 
 /**
+ * Backwards compatibility wrapper for Validation::notBlank().
+ *
+ * @param string|array $check Value to check.
+ * @return bool Success.
+ * @deprecated 2.7.0 Use Validation::notBlank() instead.
+ * @see Validation::notBlank()
+ */
+	public static function notEmpty($check) {
+		trigger_error('Validation::notEmpty() is deprecated. Use Validation::notBlank() instead.', E_USER_DEPRECATED);
+		return self::notBlank($check);
+	}
+
+/**
  * Checks that a string contains something other than whitespace
  *
  * Returns true if string contains something other than whitespace
@@ -59,12 +72,12 @@ class Validation {
  * @param string|array $check Value to check
  * @return bool Success
  */
-	public static function notEmpty($check) {
+	public static function notBlank($check) {
 		if (is_array($check)) {
 			extract(self::_defaults($check));
 		}
 
-		if (empty($check) && $check != '0') {
+		if (empty($check) && (string)$check !== '0') {
 			return false;
 		}
 		return self::_check($check, '/[^\s]+/m');
