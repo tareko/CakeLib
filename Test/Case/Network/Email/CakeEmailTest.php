@@ -387,6 +387,25 @@ class CakeEmailTest extends CakeTestCase {
 	}
 
 /**
+ * Tests that it is possible to unset the email pattern and make use of filter_var() instead.
+ *
+ * @return void
+ *
+ * @expectedException SocketException
+ * @expectedExceptionMessage Invalid email: "fail.@example.com"
+ */
+	public function testUnsetEmailPattern() {
+		$email = new CakeEmail();
+		$this->assertSame(CakeEmail::EMAIL_PATTERN, $email->emailPattern());
+
+		$email->emailPattern(null);
+		$this->assertNull($email->emailPattern());
+
+		$email->to('pass@example.com');
+		$email->to('fail.@example.com');
+	}
+
+/**
  * testFormatAddress method
  *
  * @return void
@@ -1551,7 +1570,7 @@ class CakeEmailTest extends CakeTestCase {
 			$server .= ':' . env('SERVER_PORT');
 		}
 
-		$expected = '<img src="http://' . $server . '/img/image.gif" alt="cool image" width="100" height="100" />';
+		$expected = '<img src="http://' . $server . '/img/image.gif" alt="cool image" width="100" height="100"/>';
 		$result = $this->CakeEmail->send();
 		$this->assertContains($expected, $result['message']);
 	}
@@ -2395,6 +2414,44 @@ HTML;
 		$result = $this->CakeEmail->send($message);
 		$expected = "{$message}\r\n\r\n";
 		$this->assertEquals($expected, $result['message']);
+	}
+
+/**
+ * testZeroOnlyLinesNotBeingEmptied()
+ *
+ * @return void
+ */
+	public function testZeroOnlyLinesNotBeingEmptied() {
+		$message = "Lorem\r\n0\r\n0\r\nipsum";
+
+		$this->CakeEmail->reset();
+		$this->CakeEmail->transport('Debug');
+		$this->CakeEmail->from('cake@cakephp.org');
+		$this->CakeEmail->to('cake@cakephp.org');
+		$this->CakeEmail->subject('Wordwrap Test');
+		$this->CakeEmail->config(array('empty'));
+		$result = $this->CakeEmail->send($message);
+		$expected = "{$message}\r\n\r\n";
+		$this->assertEquals($expected, $result['message']);
+	}
+
+/**
+ * Test that really long lines don't cause errors.
+ *
+ * @return void
+ */
+	public function testReallyLongLine() {
+		$this->CakeEmail->reset();
+		$this->CakeEmail->config(array('empty'));
+		$this->CakeEmail->transport('Debug');
+		$this->CakeEmail->from('cake@cakephp.org');
+		$this->CakeEmail->to('cake@cakephp.org');
+		$this->CakeEmail->subject('Wordwrap Test');
+		$this->CakeEmail->emailFormat('html');
+		$this->CakeEmail->template('long_line', null);
+		$result = $this->CakeEmail->send();
+		$this->assertContains('<a>', $result['message'], 'First bits are included');
+		$this->assertContains('x', $result['message'], 'Last byte are included');
 	}
 
 /**
